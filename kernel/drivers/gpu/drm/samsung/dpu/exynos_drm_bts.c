@@ -1109,6 +1109,8 @@ static void dpu_bts_bandwidth_boost(struct decon_device *decon)
 		if ((decon->bts.boost_info & BIT(0))
 				&& (decon->config.image_width >= 1080)
 				&& (decon->config.image_height >= 2340)) {
+			exynos_pm_qos_update_request(&decon->bts.mif_qos, 676 * 1000);
+
 			if (decon->bts.boost_info & BIT(3)) {
 				exynos_pm_qos_update_request(&decon->bts.mif_qos, 3738 * 1000);
 				exynos_pm_qos_update_request(&decon->bts.int_qos, 664 * 1000);

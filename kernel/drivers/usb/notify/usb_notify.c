@@ -818,10 +818,9 @@ static void reserve_state_check(struct work_struct *work)
 
 #ifndef CONFIG_DISABLE_LOCKSCREEN_USB_RESTRICTION
 	/* We can wait up to two minutes. */
-	wait_event_interruptible_timeout(u_noti->init_delay,
+	wait_event_interruptible(u_noti->init_delay,
 		(u_noti->lock_state != USB_NOTIFY_INIT_STATE
-			|| u_noti->b_delay.reserve_state == NOTIFY_EVENT_VBUS),
-			2*60*HZ);
+			|| u_noti->b_delay.reserve_state == NOTIFY_EVENT_VBUS));
 
 	unl_info("%s after wait\n", __func__);
 #endif
@@ -997,6 +996,11 @@ static int set_notify_disable(struct usb_notify_dev *udev, int disable)
 		store_usblog_notify(NOTIFY_EVENT,
 			(void *)&usb_notify, (void *)&usb_notify_state);
 
+		if (u_notify->skip_possible_usb) {
+			send_external_notify(EXTERNAL_NOTIFY_POSSIBLE_USB, 1);
+			u_notify->skip_possible_usb = 0;
+		}
+
 		if (!is_host_cable_block(n) && !is_client_cable_block(n)) {
 			if (u_notify->typec_status.power_role
 					== HNOTIFY_SOURCE)
@@ -1024,11 +1028,6 @@ static int set_notify_disable(struct usb_notify_dev *udev, int disable)
 				send_otg_notify(n, NOTIFY_EVENT_DRIVE_VBUS, 1);
 		}
 		send_otg_notify(n, VIRT_EVENT(u_notify->c_type), 1);
-
-		if (u_notify->skip_possible_usb) {
-			send_external_notify(EXTERNAL_NOTIFY_POSSIBLE_USB, 1);
-			u_notify->skip_possible_usb = 0;
-		}
 
 		break;
 	}
@@ -1858,7 +1857,7 @@ int usb_check_allowlist_for_lockscreen_enabled_id(struct usb_device *dev)
 	int *allowlist_array;
 	struct otg_notify *o_notify;
 	struct usb_notify *u_notify;
-	int ret = 1, noti = 0;
+	int ret = USB_NOTIFY_NORESTRICT, noti = 0;
 	
 	o_notify = get_otg_notify();
 	if (o_notify == NULL) {
@@ -1880,13 +1879,14 @@ int usb_check_allowlist_for_lockscreen_enabled_id(struct usb_device *dev)
 				u_notify->udev.allowlist_str_lockscreen_enabled_id);
 		if (usb_match_any_interface_for_id(dev, allowlist_array)) {
 			unl_info("the device is matched with allowlist for lockscreen!\n");
+			ret = USB_NOTIFY_ALLOWLOST;
 			goto done;
 		} else {
 			unl_info("the device is unmatched with allowlist for lockscreen!\n");
 			noti = 1;
 			if (u_notify->allowlist_restricted < MAX_VAL)
 				u_notify->allowlist_restricted++;
-			ret = 0;
+			ret = USB_NOTIFY_NOLIST;
 		}
 	}		
 done:
@@ -1897,6 +1897,25 @@ done:
 	return ret;
 }
 EXPORT_SYMBOL(usb_check_allowlist_for_lockscreen_enabled_id);
+
+bool check_usb_restrict_lock_state(struct otg_notify *n)
+{
+	struct usb_notify *u_notify = NULL;
+
+	if (!n) {
+		unl_err("%s otg_notify is null\n", __func__);
+		return true;
+	}
+	u_notify = (struct usb_notify *)(n->u_notify);
+
+	if (!u_notify) {
+		unl_err("%s u_notify structure is null\n", __func__);
+		return true;
+	}
+
+	return (u_notify->lock_state == USB_NOTIFY_LOCK_USB_RESTRICT);
+}
+EXPORT_SYMBOL(check_usb_restrict_lock_state);
 #endif
 
 int usb_otg_restart_accessory(struct usb_device *dev)

@@ -141,7 +141,7 @@ static int amdgpu_cs_parser_init(struct amdgpu_cs_parser *p, union drm_amdgpu_cs
 	int ret;
 
 	if (cs->in.num_chunks == 0)
-		return 0;
+		return -EINVAL;
 
 	chunk_array = kmalloc_array(cs->in.num_chunks, sizeof(uint64_t), GFP_KERNEL);
 	if (!chunk_array)
@@ -620,7 +620,7 @@ static int amdgpu_cs_parser_bos(struct amdgpu_cs_parser *p,
 			  pinned, bo->tbo.ttm->num_pages);
 		if (pinned != bo->tbo.ttm->num_pages) {
 			for (i = 0; i < pinned; i++)
-				unpin_user_page(bo->tbo.ttm->pages[i]);
+				unpin_user_page(e->user_pages[i]);
 			DRM_DEBUG("pin_user_pages_fast failed :%ld %d\n",
 				  pinned, bo->tbo.ttm->num_pages);
 			kvfree(e->user_pages);

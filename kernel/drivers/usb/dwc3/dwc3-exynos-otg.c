@@ -51,6 +51,10 @@
 #if IS_ENABLED(CONFIG_USB_CONFIGFS_F_SS_MON_GADGET)
 #include <linux/usb/f_ss_mon_gadget.h>
 #endif
+#if IS_ENABLED(CONFIG_USB_NOTIFY_LAYER)
+#include <linux/usb_notify.h>
+#endif
+
 #define LINK_DEBUG_L		(0x0C)
 #define LINK_DEBUG_H		(0x10)
 #define BUS_ACTIVITY_CHECK	(0x3F << 16)
@@ -965,6 +969,11 @@ dwc3_otg_store_b_sess(struct device *dev,
 		return -EINVAL;
 	}
 
+	if (is_blocked(get_otg_notify(), NOTIFY_BLOCK_TYPE_CLIENT)) {
+		mutex_unlock(&fsm->lock);
+		return NOTIFY_OK;
+	}
+
 	fsm->b_sess_vld = !!b_sess_vld;
 	mutex_unlock(&fsm->lock);
 
@@ -998,6 +1007,9 @@ dwc3_otg_store_id(struct device *dev,
 		return -EINVAL;
 
 	if (!exynos->usb_data_enabled)
+		return NOTIFY_OK;
+
+	if (is_blocked(get_otg_notify(), NOTIFY_BLOCK_TYPE_HOST))
 		return NOTIFY_OK;
 
 	fsm->id = !!id;
@@ -1093,13 +1105,32 @@ static ssize_t usb_data_enabled_store(struct device *dev, struct device_attribut
 {
 	struct dwc3_exynos *exynos = dev_get_drvdata(dev);
 	bool enabled = true;
+#if IS_ENABLED(CONFIG_USB_NOTIFY_LAYER)
+	unsigned long usb_notify;
+	int usb_notify_state;
+	static int prev_enabled = -1;
+#endif
 
 	if (kstrtobool(buf, &enabled))
 		return -EINVAL;
 
 	exynos->usb_data_enabled = enabled;
 
-	pr_info(" Turn %s\n", enabled ? "on" : "off");
+#if IS_ENABLED(CONFIG_USB_NOTIFY_LAYER)
+	usb_notify = NOTIFY_EVENT_ALL_DISABLE;
+	if (prev_enabled != enabled) {
+		if (enabled)
+			usb_notify_state = NOTIFY_EVENT_DISABLING;
+		else
+			usb_notify_state = NOTIFY_EVENT_ENABLING;
+
+		store_usblog_notify(NOTIFY_EVENT,
+			(void *)&usb_notify, (void *)&usb_notify_state);
+		prev_enabled = enabled;
+	}
+#endif
+
+	pr_info("%s Turn %s\n", __func__, enabled ? "on" : "off");
 	return n;
 }
 static DEVICE_ATTR_RW(usb_data_enabled);

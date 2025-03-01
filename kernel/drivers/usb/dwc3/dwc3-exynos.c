@@ -1009,14 +1009,16 @@ static int dwc3_exynos_get_properties(struct dwc3_exynos *exynos)
  *
  * extern module can check dwc3 core link state  This function will
  * return 1 link is on compliance of loopback mode else 0.
+ * add: when usb_data_enabled is set to false , return 1 to stay on usb cable.
  */
 static int dwc3_gadget_get_cmply_link_state(void *dev)
 {
 	struct dwc3 *dwc = (struct dwc3 *)dev;
+	struct dwc3_exynos *exynos = dwc3_exynos_match(dwc->dev->parent);
 	u32 reg;
 	u32 ret = -ENODEV;
 
-	if (!dwc->softconnect)
+	if (!dwc->softconnect || (exynos && !exynos->usb_data_enabled))
 		return 1;
 
 	if (dwc->pullups_connected) {

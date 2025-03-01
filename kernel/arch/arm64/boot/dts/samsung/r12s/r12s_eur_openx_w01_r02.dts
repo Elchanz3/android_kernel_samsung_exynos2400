@@ -1749,7 +1749,7 @@
 	regulator-min-microvolt = <3000000>;
 	regulator-max-microvolt = <3000000>;
 	 
-	/delete-property/ regulator-always-on;regulator-boot-on;
+	/delete-property/ regulator-always-on;/delete-property/ regulator-boot-on;
 };
 #endif
 
@@ -1813,13 +1813,13 @@
 };
 #endif
 
-#if 0 && 0
+#if 1800000 && 1800000
 &l16_reg {
 	regulator-name = "vdd_ldo16";
-	regulator-min-microvolt = <0>;
-	regulator-max-microvolt = <0>;
+	regulator-min-microvolt = <1800000>;
+	regulator-max-microvolt = <1800000>;
 	 
-	
+	/delete-property/ regulator-always-on;/delete-property/ regulator-boot-on;
 };
 #endif
 
@@ -1839,7 +1839,7 @@
 	regulator-min-microvolt = <1800000>;
 	regulator-max-microvolt = <1800000>;
 	 
-	/delete-property/ regulator-always-on;regulator-boot-on;
+	/delete-property/ regulator-always-on;/delete-property/ regulator-boot-on;
 };
 #endif
 

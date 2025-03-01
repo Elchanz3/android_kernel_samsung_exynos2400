@@ -2737,6 +2737,7 @@
   kmemdup_nul
 
 # required by usb_notify_layer.ko
+  device_attach
   usb_driver_release_interface
   usb_set_device_state
   usb_speed_string
