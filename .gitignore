@@ -1,0 +1,10 @@
+
+/build
+/external
+/out
+/prebuilts
+/tools
+bazel-android_kernel_samsung_exynos2400
+bazel-bin
+bazel-out
+bazel-testlogs
