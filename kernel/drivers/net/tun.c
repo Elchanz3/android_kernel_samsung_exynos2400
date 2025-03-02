@@ -1647,19 +1647,13 @@ static int tun_xdp_act(struct tun_struct *tun, struct bpf_prog *xdp_prog,
 	switch (act) {
 	case XDP_REDIRECT:
 		err = xdp_do_redirect(tun->dev, xdp, xdp_prog);
-		if (err) {
-			dev_core_stats_rx_dropped_inc(tun->dev);
+		if (err)
 			return err;
-		}
-		dev_sw_netstats_rx_add(tun->dev, xdp->data_end - xdp->data);
 		break;
 	case XDP_TX:
 		err = tun_xdp_tx(tun->dev, xdp);
-		if (err < 0) {
-			dev_core_stats_rx_dropped_inc(tun->dev);
+		if (err < 0)
 			return err;
-		}
-		dev_sw_netstats_rx_add(tun->dev, xdp->data_end - xdp->data);
 		break;
 	case XDP_PASS:
 		break;

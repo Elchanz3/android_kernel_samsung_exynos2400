@@ -2866,25 +2866,9 @@ static inline void skb_setup_tx_timestamp(struct sk_buff *skb, __u16 tsflags)
 			   &skb_shinfo(skb)->tskey);
 }
 
-static inline bool sk_is_inet(const struct sock *sk)
-{
-	int family = READ_ONCE(sk->sk_family);
-
-	return family == AF_INET || family == AF_INET6;
-}
-
 static inline bool sk_is_tcp(const struct sock *sk)
 {
-	return sk_is_inet(sk) &&
-	       sk->sk_type == SOCK_STREAM &&
-	       sk->sk_protocol == IPPROTO_TCP;
-}
-
-static inline bool sk_is_udp(const struct sock *sk)
-{
-	return sk_is_inet(sk) &&
-	       sk->sk_type == SOCK_DGRAM &&
-	       sk->sk_protocol == IPPROTO_UDP;
+	return sk->sk_type == SOCK_STREAM && sk->sk_protocol == IPPROTO_TCP;
 }
 
 static inline bool sk_is_stream_unix(const struct sock *sk)

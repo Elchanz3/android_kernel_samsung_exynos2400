@@ -107,7 +107,6 @@
 #include <linux/interrupt.h>
 #include <linux/poll.h>
 #include <linux/tcp.h>
-#include <linux/udp.h>
 #include <linux/init.h>
 #include <linux/highmem.h>
 #include <linux/user_namespace.h>
@@ -4334,14 +4333,8 @@ bool sk_busy_loop_end(void *p, unsigned long start_time)
 {
 	struct sock *sk = p;
 
-	if (!skb_queue_empty_lockless(&sk->sk_receive_queue))
-		return true;
-
-	if (sk_is_udp(sk) &&
-	    !skb_queue_empty_lockless(&udp_sk(sk)->reader_queue))
-		return true;
-
-	return sk_busy_loop_timeout(sk, start_time);
+	return !skb_queue_empty_lockless(&sk->sk_receive_queue) ||
+	       sk_busy_loop_timeout(sk, start_time);
 }
 EXPORT_SYMBOL(sk_busy_loop_end);
 #endif /* CONFIG_NET_RX_BUSY_POLL */
